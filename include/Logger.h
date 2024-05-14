@@ -8,9 +8,9 @@
 #include <chrono>
 
 #ifdef USE_SPDLOG
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/callback_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/callback_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 #endif
 
 
@@ -31,8 +31,8 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 	};
 
 	struct Log {
-		LogLevel level = L_INFO; 
-		
+		LogLevel level = L_INFO;
+
 		std::chrono::system_clock::time_point time_point;
 		std::string time_string = "";
 
@@ -45,7 +45,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 
 #pragma region Helpers
 
-	inline static std::string LevelToString(LogLevel level) {
+	static std::string LevelToString(LogLevel level) {
 		switch (level) {
 		case L_INFO:
 			return "INFO";
@@ -62,10 +62,10 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 		default:
 			return "INVALID";
 			break;
-		}	
+		}
 	}
 
-	inline static std::string TimePointToString(std::chrono::system_clock::time_point time) {
+	static std::string TimePointToString(std::chrono::system_clock::time_point time) {
 		std::time_t t = std::chrono::system_clock::to_time_t(time);
 		char buf[20];
 		strftime(buf, 20, "%H:%M:%S", localtime(&t));
@@ -73,7 +73,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 	}
 
 #ifdef USE_SPDLOG
-	inline static LogLevel SPDLOG_LevelToLogLevel(spdlog::level::level_enum level) {
+	static LogLevel SPDLOG_LevelToLogLevel(spdlog::level::level_enum level) {
 		switch (level) {//LEVEL TO LEVEL
 		case spdlog::level::info:
 			return L_INFO;
@@ -94,11 +94,11 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 	}
 #endif
 
-	inline static std::string LogToString(const Logger::Log log) {
+	static std::string LogToString(const Logger::Log log) {
 		return log.time_string + " [" + LevelToString(log.level) + "] " + log.payload;
 	}
 
-	inline static void ConsolePrintLog(const Log log) {
+	static void ConsolePrintLog(const Log log) {
 		std::cout << LogToString(log) << "\n";
 	}
 
@@ -106,9 +106,9 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 
 #pragma region CALLBACKS
 #ifdef USE_SPDLOG //This is called each time spdlog logs
-	inline static void SPDLOG_Callback(const spdlog::details::log_msg& msg) {
+	static void SPDLOG_Callback(const spdlog::details::log_msg& msg) {
 		Log log = {};
-		
+
 		log.level = SPDLOG_LevelToLogLevel(msg.level);
 		log.time_point = msg.time;
 		log.time_string = TimePointToString(log.time_point);
@@ -121,12 +121,12 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 	}
 #endif
 
-	inline static void RegisterCallback(std::function<void(const Log)> callback) {
+	static void RegisterCallback(std::function<void(const Log)> callback) {
 		log_callback_functions.push_back(callback);
 	}
 #pragma endregion
 
-	inline static void Initalize(LogLevel level, LogOutput output) {
+	static void Initalize(LogLevel level, LogOutput output) {
 		current_level = level;
 		current_output = output;
 
@@ -139,6 +139,18 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 
 		auto callback_sink = std::make_shared<spdlog::sinks::callback_sink_mt>(Logger::SPDLOG_Callback); //Setup callback sink
 		spdlog::get("Main")->sinks().push_back(callback_sink);
+#else
+		switch (current_output) {
+		case L_CONSOLE:
+			std::cout << "Logger : No spdlog found...\n";
+			break;
+		case L_FILE:
+			//Start file
+			break;
+		case L_GUI:
+
+			break;
+	}
 #endif
 
 		switch (current_output) {
@@ -146,7 +158,8 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 
 			break;
 		case L_FILE:
-			//Start file
+			//TODO : Init file
+
 			break;
 		case L_GUI:
 
@@ -157,7 +170,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 #define ENFORCE_STD_STRING_LOGGING
 #ifdef ENFORCE_STD_STRING_LOGGING
 
-	inline static void HandleLog(LogLevel level, const std::string& msg) {
+	inline void HandleLog(LogLevel level, const std::string& msg) {
 		Log log = {};
 		log.level = level;
 		log.time_point = std::chrono::system_clock::now();
@@ -181,7 +194,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 		}
 	}
 
-	inline static void Info(const std::string& msg) {
+	inline void Info(const std::string& msg) {
 #ifdef USE_SPDLOG
 		spdlog::info(msg);
 		return;
@@ -189,7 +202,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 		HandleLog(L_INFO, msg);
 	}
 
-	inline static void Debug(const std::string& msg) {
+	inline void Debug(const std::string& msg) {
 #ifdef USE_SPDLOG
 		spdlog::debug(msg);
 		return;
@@ -197,7 +210,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 		HandleLog(L_DEBUG, msg);
 	}
 
-	inline static void Warning(const std::string& msg) {
+	inline void Warning(const std::string& msg) {
 #ifdef USE_SPDLOG
 		spdlog::warn(msg);
 		return;
@@ -205,7 +218,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 		HandleLog(L_WARN, msg);
 	}
 
-	inline static void Error(const std::string& msg) {
+	inline void Error(const std::string& msg) {
 #ifdef USE_SPDLOG 
 		spdlog::error(msg);
 		return;
@@ -216,7 +229,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 #else
 
 	template<typename T>
-	inline static Log ConstructLog(LogLevel level, const T& msg) {
+	inline Log ConstructLog(LogLevel level, const T& msg) {
 		Log log = {};
 		log.level = level;
 		log.time_point = std::chrono::system_clock::now();
@@ -226,7 +239,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 	}
 
 	template<>
-	inline static Log ConstructLog(LogLevel level, const std::string& msg) {
+	inline Log ConstructLog(LogLevel level, const std::string& msg) {
 		Log log = {};
 		log.level = level;
 		log.time_point = std::chrono::system_clock::now();
@@ -236,7 +249,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 	}
 
 	template<typename T>
-	inline static void HandleLog(LogLevel level, const T& msg) {
+	inline void HandleLog(LogLevel level, const T& msg) {
 		Log log = ConstructLog(level, msg);
 
 		for (auto& callback : log_callback_functions) {
@@ -257,7 +270,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 	}
 
 	template<typename T>
-	inline static void Info(const T& msg) {
+	inline void Info(const T& msg) {
 #ifdef USE_SPDLOG
 		spdlog::info(msg);
 		return;
@@ -266,7 +279,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 	}
 
 	template<typename T>
-	inline static void Debug(const T& msg) {
+	inline void Debug(const T& msg) {
 #ifdef USE_SPDLOG
 		spdlog::debug(msg);
 		return;
@@ -275,7 +288,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 	}
 
 	template<typename T>
-	inline static void Warning(const T& msg) {
+	inline void Warning(const T& msg) {
 #ifdef USE_SPDLOG
 		spdlog::warn(msg);
 		return;
@@ -284,7 +297,7 @@ namespace Logger { //Logger Wrapper - If spdlog is present use it
 	}
 
 	template<typename T>
-	inline sattic void Error(const T& msg) {
+	inline void Error(const T& msg) {
 #ifdef USE_SPDLOG && SPDLOG_ENABLED
 		spdlog::error(msg);
 		return;
