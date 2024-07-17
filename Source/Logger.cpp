@@ -1,9 +1,4 @@
-#include <iostream>
+#include "Logger.h"
 
-#include <spdlog/spdlog.h>
-
-int main(int argc, char** argv) {
-	
-	spdlog::info("Logger Test");
-	return 0;
-}
+//Initalize 
+//std::vector<std::function<void(const Logger::Log)>> Logger::log_callback_functions;
