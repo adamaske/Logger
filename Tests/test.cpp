@@ -3,11 +3,33 @@
 #include "Logger.h"
 
 int main() {
+	//What kind of handlers do we have
+	Logging::FileHandler fh;
+	Logging::COUTHandler ch;
+
+
+	Logging::Logger il;
+	il.level = Logging::Level::DEBUG;
+
+	Logging::Logger dl;
+	dl.level = Logging::Level::DEBUG;
+
+	il.Config();
+	dl.Config();
+
+	il.handlers.push_back(&fh);
+	il.handlers.push_back(&ch);
+
+	dl.handlers.push_back(&fh);
+	dl.handlers.push_back(&ch);
+
+	il.queue_listener.handlers.push_back(&fh);
+	il.queue_listener.handlers.push_back(&ch);
 	
-	Logger::Info("Test #1");
-	Logger::Error("Test #2");
-	Logger::Warning("Test #3");
-	Logger::Debug("Test #4");
+	il.threaded = false;
+
+
+	il.Info("Hello officer");
 
 	return 0;
 }
